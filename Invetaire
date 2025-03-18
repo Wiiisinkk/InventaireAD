@@ -1,0 +1,49 @@
+# Définition des paramètres
+param ()
+
+# Demande à l'utilisateur de choisir une option
+$Option = Read-Host "Choisissez une option (users, computers, gpo)"
+
+# Exécution selon l'option choisie
+switch ($Option) {
+    "users" { Get-ADUsers }
+    "computers" { Get-ADComputers }
+    "gpo" { Get-ADGPOs }
+    Default { Write-Host "Options disponibles : users, computers, gpo"; exit }
+}
+
+# Fonction pour obtenir les utilisateurs AD
+function Get-ADUsers {
+    $Users = Get-ADUser -Filter * -Properties LastLogonDate | Select-Object Name, SamAccountName, Enabled, LastLogonDate
+    $Users | Export-Csv -Path "AD_Users.csv" -NoTypeInformation
+    Write-Host "Fichier AD_Users.csv créé."
+    
+    $DateLimit = (Get-Date).AddDays(-90)
+    $InactiveUsers = Get-ADUser -Filter {LastLogonDate -lt $DateLimit} -Properties LastLogonDate | Select-Object Name, SamAccountName, LastLogonDate
+    $InactiveUsers | Export-Csv -Path "AD_Users_Inactifs.csv" -NoTypeInformation
+    Write-Host "Fichier AD_Users_Inactifs.csv créé."
+}
+
+# Fonction pour obtenir les ordinateurs AD
+function Get-ADComputers {
+    $Computers = Get-ADComputer -Filter * -Properties LastLogonDate | Select-Object Name, DNSHostName, Enabled, LastLogonDate
+    $Computers | Export-Csv -Path "AD_Computers.csv" -NoTypeInformation
+    Write-Host "Fichier AD_Computers.csv créé."
+    
+    $DateLimit = (Get-Date).AddDays(-90)
+    $InactiveComputers = Get-ADComputer -Filter {LastLogonDate -lt $DateLimit} -Properties LastLogonDate | Select-Object Name, DNSHostName, LastLogonDate
+    $InactiveComputers | Export-Csv -Path "AD_Computers_Inactifs.csv" -NoTypeInformation
+    Write-Host "Fichier AD_Computers_Inactifs.csv créé."
+}
+
+# Fonction pour obtenir les GPOs AD
+function Get-ADGPOs {
+    $GPOs = Get-GPO -All | Select-Object DisplayName, CreationTime, ModificationTime
+    $GPOs | Export-Csv -Path "AD_GPOs.csv" -NoTypeInformation
+    Write-Host "Fichier AD_GPOs.csv créé."
+    
+    $DateLimit = (Get-Date).AddDays(-90)
+    $InactiveGPOs = Get-GPO -All | Where-Object { $_.ModificationTime -lt $DateLimit } | Select-Object DisplayName, ModificationTime
+    $InactiveGPOs | Export-Csv -Path "AD_GPOs_Inactifs.csv" -NoTypeInformation
+    Write-Host "Fichier AD_GPOs_Inactifs.csv créé."
+}
