@@ -6,24 +6,24 @@ $Option = Read-Host "Choisissez une option (users, computers, gpo)"
 
 # Fonction pour obtenir les utilisateurs AD
 function Get-ADUsers {
-    $Users = Get-ADUser -Filter * -Properties LastLogonDate | Select-Object Name, SamAccountName, Enabled, LastLogonDate
+    $Users = Get-ADUser -Filter * -Properties ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy')) | Select-Object Name, SamAccountName, Enabled, ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy'))
     $Users | Export-Csv -Path "AD_Users.csv" -NoTypeInformation
     Write-Host "Fichier AD_Users.csv créé."
     
     $DateLimit = (Get-Date).AddDays(-90)
-    $InactiveUsers = Get-ADUser -Filter {LastLogonDate -lt $DateLimit} -Properties LastLogonDate | Select-Object Name, SamAccountName, LastLogonDate
+    $InactiveUsers = Get-ADUser -Filter {([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy')) -lt $DateLimit} -Properties ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy')) | Select-Object Name, SamAccountName, ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy'))
     $InactiveUsers | Export-Csv -Path "AD_Users_Inactifs.csv" -NoTypeInformation
     Write-Host "Fichier AD_Users_Inactifs.csv créé."
 }
 
 # Fonction pour obtenir les ordinateurs AD
 function Get-ADComputers {
-    $Computers = Get-ADComputer -Filter * -Properties LastLogonDate | Select-Object Name, DNSHostName, Enabled, LastLogonDate
+    $Computers = Get-ADComputer -Filter * -Properties ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy')) | Select-Object Name, DNSHostName, Enabled, ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy'))
     $Computers | Export-Csv -Path "AD_Computers.csv" -NoTypeInformation
     Write-Host "Fichier AD_Computers.csv créé."
     
     $DateLimit = (Get-Date).AddDays(-90)
-    $InactiveComputers = Get-ADComputer -Filter {LastLogonDate -lt $DateLimit} -Properties LastLogonDate | Select-Object Name, DNSHostName, LastLogonDate
+    $InactiveComputers = Get-ADComputer -Filter {([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy')) -lt $DateLimit} -Properties ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy')) | Select-Object Name, DNSHostName, ([datetime]::FromFileTime($_.LastLogonTimestamp).ToString('dd/MM/yyyy'))
     $InactiveComputers | Export-Csv -Path "AD_Computers_Inactifs.csv" -NoTypeInformation
     Write-Host "Fichier AD_Computers_Inactifs.csv créé."
 }
