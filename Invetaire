@@ -47,3 +47,55 @@ switch ($Option) {
     "gpo" { Get-ADGPOs }
     Default { Write-Host "Options disponibles : users, computers, gpo"; exit }
 }
+
+
+
+
+
+# Définir le DC de référence
+$referenceDC = "DC-REFERENCE-NAME"
+
+# Récupérer la liste de tous les DC du domaine
+$DCs = (Get-ADDomainController -Filter *).Name
+
+# Stocker le PasswordLastSet de chaque DC
+$krbtgtDates = @{}
+
+Write-Host "Récupération des dates 'Password Last Set' du compte krbtgt sur chaque DC..." -ForegroundColor Cyan
+
+foreach ($dc in $DCs) {
+    try {
+        # Interroger le compte krbtgt sur le DC courant
+        $krbtgt = Get-ADUser -Server $dc -Identity krbtgt -Properties PasswordLastSet
+        $date = $krbtgt.PasswordLastSet
+        $krbtgtDates[$dc] = $date
+
+        Write-Host "$dc : $date"
+    }
+    catch {
+        Write-Host "Erreur lors de la récupération sur $dc : $_" -ForegroundColor Yellow
+    }
+}
+
+# Vérification du DC de référence
+if (-not $krbtgtDates.ContainsKey($referenceDC)) {
+    Write-Host "`nLe DC de référence '$referenceDC' n'a pas pu être récupéré. Abandon." -ForegroundColor Red
+    exit 1
+}
+
+$refDate = $krbtgtDates[$referenceDC]
+
+Write-Host "`nDate de référence ($referenceDC) : $refDate" -ForegroundColor Cyan
+Write-Host "`nComparaison :"
+
+foreach ($dc in $krbtgtDates.Keys) {
+    $date = $krbtgtDates[$dc]
+
+    if ($date -eq $refDate) {
+        Write-Host "$dc : $date (OK)" -ForegroundColor Green
+    } else {
+        Write-Host "$dc : $date (DIFFÉRENT)" -ForegroundColor Red
+    }
+}
+
+
